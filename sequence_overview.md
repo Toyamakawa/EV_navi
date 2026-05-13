@@ -3,6 +3,7 @@
 > **凡例**：紫ハイライト = 修正・追記箇所（番号は確認事項.csvの番号に対応）
 
 ```mermaid
+%%{init: {'theme': 'base'}}%%
 sequenceDiagram
     actor Driver as ドライバー
 

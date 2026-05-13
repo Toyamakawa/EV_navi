@@ -90,118 +90,104 @@ sequenceDiagram
 
     Note over FLASH: [前提] OCPPサーバー（Java）に常時WebSocket接続済み
 
-    rect rgb(230, 230, 250)
-        Note over Driver,NaviApp: フェーズ1: 充電スタンド検索・選択
-        Driver->>NaviApp: 充電スタンドを検索・選択
-        NaviApp->>NaviBackend: スタンド情報リクエスト
-        NaviBackend-->>NaviApp: スタンド一覧・空き状況
-        NaviApp-->>Driver: 地図上にスタンド表示
-        Note over Driver,NaviApp: [詳細] seq_01_search 充電スタンド検索・選択
-    end
+    Note over Driver,SWAPay: ── フェーズ1: 充電スタンド検索・選択 ──
+    Driver->>NaviApp: 充電スタンドを検索・選択
+    NaviApp->>NaviBackend: スタンド情報リクエスト
+    NaviBackend-->>NaviApp: スタンド一覧・空き状況
+    NaviApp-->>Driver: 地図上にスタンド表示
+    Note over Driver,NaviApp: [詳細] seq_01_search 充電スタンド検索・選択
 
-    rect rgb(230, 230, 250)
-        Note over Driver,NaviApp: フェーズ2: 接続・QRスキャン
-        Driver->>EV: 充電ガンをEVに差し込む
-        Driver->>FLASH: [修正②] SWAPayを選択（FLASH本体で操作）
-        EV->>Java: 充電ガン接続通知
-        Java->>FLASH: OCPPセッション確認
-        Note over FLASH: [修正①] FLASHの画面にQRコードを表示
-        Driver->>NaviApp: EVナビを起動・QRコードをスキャン
-        Note over Driver,NaviApp: [詳細] seq_02_connect 接続・QRスキャン
-    end
+    Note over Driver,SWAPay: ── フェーズ2: 接続・QRスキャン ──
+    Driver->>EV: 充電ガンをEVに差し込む
+    Driver->>FLASH: [修正②] SWAPayを選択（FLASH本体で操作）
+    EV->>Java: 充電ガン接続通知
+    Java->>FLASH: OCPPセッション確認
+    Note over FLASH: [修正①] FLASHの画面にQRコードを表示
+    Driver->>NaviApp: EVナビを起動・QRコードをスキャン
+    Note over Driver,NaviApp: [詳細] seq_02_connect 接続・QRスキャン
 
-    rect rgb(230, 230, 250)
-        Note over Driver,SWAPay: フェーズ3: 支払い認証
-        NaviApp->>NaviBackend: 認証リクエスト送信
-        NaviBackend->>Flask: 支払い認証リクエスト
-        Flask->>SWAPay: 決済リクエスト
-        alt 認証成功
-            SWAPay-->>Flask: 承認
-            Flask-->>NaviBackend: 支払い承認通知
-            NaviBackend-->>NaviApp: [修正③④] 充電開始ボタン表示
-        else 認証失敗
-            SWAPay-->>Flask: 否認
-            Flask-->>NaviBackend: 支払い可能範囲外通知
-            NaviBackend-->>NaviApp: 支払い失敗を表示
-            NaviApp->>Driver: [修正③] 充電器画面での操作のみ（通常充電フロー）に切り替わり
+    Note over Driver,SWAPay: ── フェーズ3: 支払い認証 ──
+    NaviApp->>NaviBackend: 認証リクエスト送信
+    NaviBackend->>Flask: 支払い認証リクエスト
+    Flask->>SWAPay: 決済リクエスト
+    alt 認証成功
+        SWAPay-->>Flask: 承認
+        Flask-->>NaviBackend: 支払い承認通知
+        NaviBackend-->>NaviApp: [修正③④] 充電開始ボタン表示
+    else 認証失敗
+        SWAPay-->>Flask: 否認
+        Flask-->>NaviBackend: 支払い可能範囲外通知
+        NaviBackend-->>NaviApp: 支払い失敗を表示
+        NaviApp->>Driver: [修正③] 充電器画面での操作のみ（通常充電フロー）に切り替わり
+    end
+    Note over NaviApp,SWAPay: [修正⑩] refの参照範囲を NaviApp〜SWAPay に変更（QRスキャンがトリガー）
+    Note over NaviApp,SWAPay: [詳細] seq_03_auth 支払い認証
+
+    Note over Driver,SWAPay: ── フェーズ4: 充電開始 ──
+    Driver->>NaviApp: 充電開始ボタンを押す
+    NaviApp->>NaviBackend: 充電開始コマンド送信
+    NaviBackend->>Flask: RemoteStartTransaction リクエスト
+    Flask->>Java: コマンド転送
+    Java->>FLASH: RemoteStartTransaction
+    FLASH->>EV: 充電開始
+    FLASH->>Java: StartTransaction 通知
+    Java-->>Flask: トランザクションID
+    Flask-->>NaviBackend: 充電開始確認
+    NaviBackend->>NaviApp: [追記⑤] 充電開始通知
+    NaviApp->>Driver: [追記⑤] 充電開始を表示
+    Note over Driver,NaviApp: [詳細] seq_04_start 充電開始制御
+
+    Note over Driver,SWAPay: ── フェーズ5: 充電中モニタリング ──
+    EV->>Java: [修正⑥] 充電セッション開始通知
+    Java->>Flask: [修正⑥] 充電セッション開始通知
+    Flask->>NaviBackend: [修正⑥] 充電セッション開始通知
+    NaviBackend->>NaviApp: [修正⑥] 充電セッション開始通知
+    loop 充電中（定期的に）
+        FLASH->>Java: MeterValues（電力量・充電状態）
+        Java->>Flask: メーター値通知
+        Flask->>NaviBackend: 充電状態更新
+        NaviBackend->>NaviApp: リアルタイム状態プッシュ
+        NaviApp->>Driver: 充電状況・SOC表示
+        alt フル充電（100%）
+            EV->>Java: [修正⑦] フル充電通知
+            Java->>Flask: [修正⑦] フル充電通知
+            Flask->>NaviBackend: [修正⑦] フル充電通知
+            NaviBackend->>NaviApp: [修正⑦] フル充電通知
         end
-        Note over NaviApp,SWAPay: [修正⑩] refの参照範囲を NaviApp〜SWAPay に変更（QRスキャンがトリガー）
-        Note over NaviApp,SWAPay: [詳細] seq_03_auth 支払い認証
     end
+    Note over Driver,NaviApp: [詳細] seq_05_monitoring 充電中モニタリング
 
-    rect rgb(230, 230, 250)
-        Note over Driver,NaviApp: フェーズ4: 充電開始
-        Driver->>NaviApp: 充電開始ボタンを押す
-        NaviApp->>NaviBackend: 充電開始コマンド送信
-        NaviBackend->>Flask: RemoteStartTransaction リクエスト
-        Flask->>Java: コマンド転送
-        Java->>FLASH: RemoteStartTransaction
-        FLASH->>EV: 充電開始
-        FLASH->>Java: StartTransaction 通知
-        Java-->>Flask: トランザクションID
-        Flask-->>NaviBackend: 充電開始確認
-        NaviBackend->>NaviApp: [追記⑤] 充電開始通知
-        NaviApp->>Driver: [追記⑤] 充電開始を表示
-        Note over Driver,NaviApp: [詳細] seq_04_start 充電開始制御
-    end
+    Note over Driver,SWAPay: ── フェーズ6: 充電停止・精算 ──
+    Driver->>NaviApp: 充電停止ボタンを押す
+    NaviApp->>NaviBackend: 充電停止リクエスト
+    NaviBackend->>Flask: 停止コマンド送信
+    Flask->>Java: StopTransaction コマンド
+    Java->>FLASH: 停止コマンド転送
+    FLASH->>FLASH: 充電セッションを停止・課金計上
+    FLASH->>Java: 最終使用量・金額
+    Java->>Flask: 終了イベント
+    Flask->>NaviBackend: 最終支払額通知
+    NaviBackend->>NaviApp: 最終支払額を更新・確認ボタン表示
+    NaviApp->>Driver: 最終支払額表示
+    Note over Driver,NaviApp: [詳細] seq_06_stop 充電停止・精算
 
-    rect rgb(230, 230, 250)
-        Note over Driver,NaviApp: フェーズ5: 充電中モニタリング
-        EV->>Java: [修正⑥] 充電セッション開始通知
-        Java->>Flask: [修正⑥] 充電セッション開始通知
-        Flask->>NaviBackend: [修正⑥] 充電セッション開始通知
-        NaviBackend->>NaviApp: [修正⑥] 充電セッション開始通知
-        loop 充電中（定期的に）
-            FLASH->>Java: MeterValues（電力量・充電状態）
-            Java->>Flask: メーター値通知
-            Flask->>NaviBackend: 充電状態更新
-            NaviBackend->>NaviApp: リアルタイム状態プッシュ
-            NaviApp->>Driver: 充電状況・SOC表示
-            alt フル充電（100%）
-                EV->>Java: [修正⑦] フル充電通知
-                Java->>Flask: [修正⑦] フル充電通知
-                Flask->>NaviBackend: [修正⑦] フル充電通知
-                NaviBackend->>NaviApp: [修正⑦] フル充電通知
-            end
-        end
-        Note over Driver,NaviApp: [詳細] seq_05_monitoring 充電中モニタリング
+    Note over Driver,SWAPay: ── フェーズ7: 支払い確定 ──
+    Driver->>NaviApp: 確定ボタンを押す（支払う）
+    NaviApp->>NaviBackend: 確定認証
+    NaviBackend->>Flask: 最終支払額確認・決済リクエスト
+    Flask->>SWAPay: 支払い確定リクエスト
+    alt 支払い確定成功
+        SWAPay-->>Flask: 確定成功
+        Flask-->>NaviBackend: 完了通知
+        NaviBackend-->>NaviApp: 支払い確定情報を更新
+        NaviApp-->>Driver: 支払い完了表示
+    else 支払い確定失敗
+        SWAPay-->>Flask: 確定失敗
+        Flask-->>NaviBackend: 失敗通知
+        NaviBackend-->>NaviApp: 支払い確定失敗表示
+        NaviApp->>Driver: [修正⑨] 充電器画面での操作のみ（通常充電フロー）に切り替わり
     end
-
-    rect rgb(230, 230, 250)
-        Note over Driver,NaviApp: フェーズ6: 充電停止・精算
-        Driver->>NaviApp: 充電停止ボタンを押す
-        NaviApp->>NaviBackend: 充電停止リクエスト
-        NaviBackend->>Flask: 停止コマンド送信
-        Flask->>Java: StopTransaction コマンド
-        Java->>FLASH: 停止コマンド転送
-        FLASH->>FLASH: 充電セッションを停止・課金計上
-        FLASH->>Java: 最終使用量・金額
-        Java->>Flask: 終了イベント
-        Flask->>NaviBackend: 最終支払額通知
-        NaviBackend->>NaviApp: 最終支払額を更新・確認ボタン表示
-        NaviApp->>Driver: 最終支払額表示
-        Note over Driver,NaviApp: [詳細] seq_06_stop 充電停止・精算
-    end
-
-    rect rgb(230, 230, 250)
-        Note over Driver,SWAPay: フェーズ7: 支払い確定
-        Driver->>NaviApp: 確定ボタンを押す（支払う）
-        NaviApp->>NaviBackend: 確定認証
-        NaviBackend->>Flask: 最終支払額確認・決済リクエスト
-        Flask->>SWAPay: 支払い確定リクエスト
-        alt 支払い確定成功
-            SWAPay-->>Flask: 確定成功
-            Flask-->>NaviBackend: 完了通知
-            NaviBackend-->>NaviApp: 支払い確定情報を更新
-            NaviApp-->>Driver: 支払い完了表示
-        else 支払い確定失敗
-            SWAPay-->>Flask: 確定失敗
-            Flask-->>NaviBackend: 失敗通知
-            NaviBackend-->>NaviApp: 支払い確定失敗表示
-            NaviApp->>Driver: [修正⑨] 充電器画面での操作のみ（通常充電フロー）に切り替わり
-        end
-        Note over Flask,SWAPay: [詳細] seq_07_payment 支払い確定
-    end
+    Note over Flask,SWAPay: [詳細] seq_07_payment 支払い確定
     </div>
   </div>
   <script>

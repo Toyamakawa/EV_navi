@@ -26,7 +26,6 @@ flowchart TD
 
     Driver -->|操作| NaviApp
     Driver -->|操作| FLASH
-    EV <-->|OCPP通信| JavaPart
     FLASH <-->|OCPP通信| JavaPart
     NaviBackend -->|認証・制御リクエスト| FlaskPart
     FlaskPart -->|決済リクエスト| SWAPay

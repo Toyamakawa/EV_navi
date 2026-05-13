@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV充電システム - コンポーネント図</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.4em;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .diagram-wrapper {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 24px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    .legend {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 16px 24px;
+      display: inline-block;
+    }
+    .legend h2 {
+      font-size: 1em;
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 12px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>EV充電システム - コンポーネント図</h1>
+  <div class="diagram-wrapper">
+    <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}, 'flowchart': {'htmlLabels': true, 'curve': 'basis'}}}%%
+flowchart TD
+    Driver(["👤 ドライバー"])
+
+    SWAPay["SWAPay<br/>（決済）"]
+
+    subgraph ChargingStation["充電スタンド"]
+        EV["EV本体<br/>（車載システム）"]
+        FLASH["FLASH<br/>（充電器）"]
+    end
+
+    subgraph OCPP["OCPPサーバー"]
+        JavaPart["Java<br/>（OCPPプロトコル処理）"]
+        FlaskPart["Flask<br/>（外部API連携）"]
+        JavaPart --> FlaskPart
+    end
+
+    subgraph EVNavi["EVナビ"]
+        NaviApp["EVナビ<br/>フロントエンド"]
+        NaviBackend["EVナビ<br/>バックエンド"]
+        NaviApp -->|API通信| NaviBackend
+    end
+
+    Driver -->|操作| NaviApp
+    Driver -->|操作| FLASH
+    FLASH <-->|OCPP通信| JavaPart
+    NaviBackend -->|認証・制御リクエスト| FlaskPart
+    FlaskPart -->|決済リクエスト| SWAPay
+
+    classDef navi fill:#add8e6,stroke:#4682b4,color:#000
+    classDef selfdev fill:#90ee90,stroke:#2e8b57,color:#000
+    classDef charging fill:#ffa07a,stroke:#cc5500,color:#000
+    classDef payment fill:#fffaaa,stroke:#b8b800,color:#000
+    classDef actor fill:#ffffff,stroke:#555555,color:#000
+
+    class NaviApp,NaviBackend navi
+    class JavaPart,FlaskPart selfdev
+    class EV,FLASH charging
+    class SWAPay payment
+    class Driver actor
+
+    style OCPP fill:#c8f0c8,stroke:#2e8b57,color:#000
+    style ChargingStation fill:#ffd0b8,stroke:#cc5500,color:#000
+    style EVNavi fill:#c8e8f5,stroke:#4682b4,color:#000
+    </div>
+  </div>
+  <div class="legend">
+    <h2>凡例</h2>
+    <table>
+      <tr><th>色</th><th>区分</th></tr>
+      <tr><td>🟩 緑</td><td>自社開発</td></tr>
+      <tr><td>🟦 青</td><td>外部システム（EVナビ）</td></tr>
+      <tr><td>🟧 オレンジ</td><td>外部システム（充電スタンド）</td></tr>
+      <tr><td>🟨 黄</td><td>外部システム（決済）</td></tr>
+    </table>
+  </div>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'base' });
+  </script>
+</body>
+</html>

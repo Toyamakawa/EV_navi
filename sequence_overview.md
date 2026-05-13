@@ -28,14 +28,18 @@ sequenceDiagram
 
     Note over FLASH: [前提] OCPPサーバー（Java）に常時WebSocket接続済み
 
-    Note over Driver,SWAPay: ── フェーズ1: 充電スタンド検索・選択 ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ1: 充電スタンド検索・選択
+    end
     Driver->>NaviApp: 充電スタンドを検索・選択
     NaviApp->>NaviBackend: スタンド情報リクエスト
     NaviBackend-->>NaviApp: スタンド一覧・空き状況
     NaviApp-->>Driver: 地図上にスタンド表示
     Note over Driver,NaviApp: [詳細] seq_01_search 充電スタンド検索・選択
 
-    Note over Driver,SWAPay: ── フェーズ2: 接続・QRスキャン ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ2: 接続・QRスキャン
+    end
     Driver->>EV: 充電ガンをEVに差し込む
     Driver->>FLASH: [修正②] SWAPayを選択（FLASH本体で操作）
     EV->>Java: 充電ガン接続通知
@@ -44,7 +48,9 @@ sequenceDiagram
     Driver->>NaviApp: EVナビを起動・QRコードをスキャン
     Note over Driver,NaviApp: [詳細] seq_02_connect 接続・QRスキャン
 
-    Note over Driver,SWAPay: ── フェーズ3: 支払い認証 ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ3: 支払い認証
+    end
     NaviApp->>NaviBackend: 認証リクエスト送信
     NaviBackend->>Flask: 支払い認証リクエスト
     Flask->>SWAPay: 決済リクエスト
@@ -61,7 +67,9 @@ sequenceDiagram
     Note over NaviApp,SWAPay: [修正⑩] refの参照範囲を NaviApp〜SWAPay に変更（QRスキャンがトリガー）
     Note over NaviApp,SWAPay: [詳細] seq_03_auth 支払い認証
 
-    Note over Driver,SWAPay: ── フェーズ4: 充電開始 ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ4: 充電開始
+    end
     Driver->>NaviApp: 充電開始ボタンを押す
     NaviApp->>NaviBackend: 充電開始コマンド送信
     NaviBackend->>Flask: RemoteStartTransaction リクエスト
@@ -75,7 +83,9 @@ sequenceDiagram
     NaviApp->>Driver: [追記⑤] 充電開始を表示
     Note over Driver,NaviApp: [詳細] seq_04_start 充電開始制御
 
-    Note over Driver,SWAPay: ── フェーズ5: 充電中モニタリング ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ5: 充電中モニタリング
+    end
     EV->>Java: [修正⑥] 充電セッション開始通知
     Java->>Flask: [修正⑥] 充電セッション開始通知
     Flask->>NaviBackend: [修正⑥] 充電セッション開始通知
@@ -95,7 +105,9 @@ sequenceDiagram
     end
     Note over Driver,NaviApp: [詳細] seq_05_monitoring 充電中モニタリング
 
-    Note over Driver,SWAPay: ── フェーズ6: 充電停止・精算 ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ6: 充電停止・精算
+    end
     Driver->>NaviApp: 充電停止ボタンを押す
     NaviApp->>NaviBackend: 充電停止リクエスト
     NaviBackend->>Flask: 停止コマンド送信
@@ -109,7 +121,9 @@ sequenceDiagram
     NaviApp->>Driver: 最終支払額表示
     Note over Driver,NaviApp: [詳細] seq_06_stop 充電停止・精算
 
-    Note over Driver,SWAPay: ── フェーズ7: 支払い確定 ──
+    rect rgb(224,224,224)
+        Note over Driver,SWAPay: フェーズ7: 支払い確定
+    end
     Driver->>NaviApp: 確定ボタンを押す（支払う）
     NaviApp->>NaviBackend: 確定認証
     NaviBackend->>Flask: 最終支払額確認・決済リクエスト

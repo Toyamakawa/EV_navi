@@ -5,8 +5,6 @@
 flowchart TD
     Driver(["👤 ドライバー"])
 
-    NaviApp["EVナビ<br/>フロントエンド"]
-    NaviBackend["EVナビ<br/>バックエンド"]
     SWAPay["SWAPay<br/>（決済）"]
 
     subgraph ChargingStation["充電スタンド"]
@@ -20,13 +18,18 @@ flowchart TD
         JavaPart --> FlaskPart
     end
 
+    subgraph EVNavi["EVナビ"]
+        NaviApp["EVナビ<br/>フロントエンド"]
+        NaviBackend["EVナビ<br/>バックエンド"]
+        NaviApp -->|API通信| NaviBackend
+    end
+
     Driver -->|操作| NaviApp
     Driver -->|操作| FLASH
     EV <-->|OCPP通信| JavaPart
     FLASH <-->|OCPP通信| JavaPart
     NaviBackend -->|認証・制御リクエスト| FlaskPart
     FlaskPart -->|決済リクエスト| SWAPay
-    NaviApp -->|API通信| NaviBackend
 
     classDef navi fill:#add8e6,stroke:#4682b4,color:#000
     classDef selfdev fill:#90ee90,stroke:#2e8b57,color:#000
@@ -42,6 +45,7 @@ flowchart TD
 
     style OCPP fill:#c8f0c8,stroke:#2e8b57,color:#000
     style ChargingStation fill:#ffd0b8,stroke:#cc5500,color:#000
+    style EVNavi fill:#c8e8f5,stroke:#4682b4,color:#000
 ```
 
 ## 凡例
